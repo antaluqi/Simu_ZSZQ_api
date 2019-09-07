@@ -195,7 +195,7 @@ def insertTestData():
     conn.commit()
     conn.close()
 
-def get_DBdate(t_name):
+def get_table_data(t_name):
     with sqlite3.connect('ZSZQ.db') as conn:
         if t_name=='b':
             table='balance'
@@ -220,6 +220,19 @@ def get_DBdate(t_name):
         if t_name=='b':
             return result[0]
         return result
+
+def add_table_data(tb_name,data):
+    if isinstance(data,dict)==False:
+        return {'success':False,'mag':'参数2必须为dict'}
+
+    with sqlite3.connect('ZSZQ.db') as conn:
+        if conn.execute("select name from sqlite_master where type='table' and name = 'balance'" ).fetchall()==[]:
+            return {'success':False,'mag':'表%s不存在'%(tb_name)}
+        tbInfo=conn.execute("PRAGMA table_info('%s')" %(tb_name)).fetchall()
+        cName=[c[1] for c in tbInfo]
+        if (set(data.keys)<=set(cName))==False:
+            return {'success':False,'mag':'请检查数据字段是否匹配表字段'}
+
 
 def getQuote(codeList):
     result=[]
@@ -247,6 +260,8 @@ def getQuote(codeList):
 
 
 
+
+
 def entrust(code,bs,price,amount):
     # code 的输入判定
     quote=getQuote([code])
@@ -270,9 +285,11 @@ def entrust(code,bs,price,amount):
         return {'success':False,'mag':'购买数量必须为100的整数倍'}
 
     # 可用资金判定
-    balance=get_DBdate('b')
+    balance=get_table_data('b')
     if price*amount>balance['可用余额']:
         return {'success':False,'mag':'可用资金不足'}
+
+
 
 
 
