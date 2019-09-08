@@ -1,10 +1,17 @@
 from Simu import *
 from pprint import pprint
 
-# ctrateTB()
+#ctrateTB()
 
-# insertTestData()
+#insertTestData()
 
-# pprint(get_table_data('b'))
-pprint(entrust('600118','b',22.33,200))
-#pprint(getQuote(['600123','000525','sh000001','600803']))
+#pprint(get_table_data('b'))
+#pprint(entrust('600118','b',22.33,200))
+#pprint(get_sQuote('601398'))
+
+
+data={'冻结资金': 0.0,
+ '可取资金': 5000.83,
+ '可用余额': 5000.83,
+}
+pprint((add_table_data('b',data)))

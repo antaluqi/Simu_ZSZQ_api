@@ -13,7 +13,19 @@ def ctrateTB():
                                    f_all_bal REAL,
                                    f_account TEXT);'''
 
-    create_stock_str='''CREATE TABLE IF NOT EXISTS stock
+    create_stock_str = '''CREATE TABLE IF NOT EXISTS stock
+                                     (    code TEXT,
+                                          name TEXT,
+                                          s_bal REAL,
+                                          s_can_use_bal REAL,
+                                          s_fros_bal REAL,
+                                          s_cost_pri REAL,
+                                          market TEXT,
+                                          s_account TEXT,
+                                          f_account TEXT);'''
+
+
+    create_stockv_str='''CREATE TABLE IF NOT EXISTS stock
                                      (    code TEXT,
                                           name TEXT,
                                           s_bal REAL,
@@ -48,7 +60,7 @@ def ctrateTB():
                                   f_account TEXT);'''
 
     create_trades_str='''CREATE TABLE IF NOT EXISTS trades
-                                 ( t_date TEXT,
+                                 ( t_date DATE,
                                    t_time TEXT,
                                    code TEXT,
                                    name TEXT,
@@ -95,23 +107,15 @@ def insertTestData():
                                   s_can_use_bal,
                                   s_fros_bal,
                                   s_cost_pri,
-                                  s_market_pri,
-                                  s_profit_rat,
-                                  s_market_val,
-                                  s_profit,
                                   market,
                                   s_account,
                                   f_account) 
-                           VALUES( 601395,
+                           VALUES( 601398,
                                    '工商银行',
                                    100,
                                    100,
                                    0,
                                    5.30,
-                                   5.40,
-                                   1.89,
-                                   540,
-                                   0.1,
                                    '上海A股',
                                    'A467162210',
                                    1320011172);'''
@@ -168,7 +172,7 @@ def insertTestData():
                                        s_account,
                                        market,
                                        f_account) 
-                                   VALUES( 2019-09-05,
+                                   VALUES( '2019-09-05',
                                            '23:58:52',
                                            601398,
                                            '工商银行',
@@ -197,45 +201,47 @@ def insertTestData():
 
 def get_table_data(t_name):
     with sqlite3.connect('ZSZQ.db') as conn:
-        if t_name=='b':
-            table='balance'
-            key=F_COLUMN_KEY
-        elif t_name=='s':
-            table='stock'
-            key=S_COLUMN_KEY
-        elif t_name=='e':
-            table='entrusts'
-            key=E_COLUMN_KEY
-        elif t_name=='t':
-            table='trades'
-            key=T_COLUMN_KEY
-        else:
-            pass
-        value=conn.execute("select * from %s"%(table)).fetchall()
+        tableName=sTBNAME_TBNANE[t_name]
+        key=sTBNAME_CNAME[t_name]
+        value=conn.execute("select * from %s"%(tableName)).fetchall()
         result=[]
         for v in value:
-            r={}
-            r.update(zip(key,v))
-            result.append(r)
+            result.append(dict(zip(key,v)))
         if t_name=='b':
+            s=get_table_data('s')
+            result[0]['股票市值']=0 if s==[] else sum([v['市值'] for v in s])
             return result[0]
+        elif t_name=='s':
+           for s in result:
+              quote = get_sQuote(s['证券代码'])[s['证券代码']]
+              s['市价']=quote['最新价格']
+              s['盈亏比例(%)']=round((quote['最新价格']-s['成本价'])/s['成本价']*100,2)
+              s['市值']=quote['最新价格']*s['股票余额']
+              s['盈亏']=round(quote['最新价格']-s['成本价'],2)
         return result
 
-def add_table_data(tb_name,data):
+def add_table_data(stb_name,data):
     if isinstance(data,dict)==False:
         return {'success':False,'mag':'参数2必须为dict'}
 
     with sqlite3.connect('ZSZQ.db') as conn:
-        if conn.execute("select name from sqlite_master where type='table' and name = 'balance'" ).fetchall()==[]:
+        if stb_name not in sTBNAME_TBNANE.keys():
+            return {'success': False, 'mag': '表%s不存在' % (stb_name)}
+        tb_name=sTBNAME_TBNANE[stb_name]
+        if conn.execute("select name from sqlite_master where type='table' and name = '%s'"%(tb_name) ).fetchall()==[]:
             return {'success':False,'mag':'表%s不存在'%(tb_name)}
-        tbInfo=conn.execute("PRAGMA table_info('%s')" %(tb_name)).fetchall()
-        cName=[c[1] for c in tbInfo]
-        if (set(data.keys)<=set(cName))==False:
+        cName=sTBNAME_CNAME[stb_name]
+        if (set(data.keys())<=set(cName))==False:
             return {'success':False,'mag':'请检查数据字段是否匹配表字段'}
+        data=dict([(sTBNAME_NKDICT[stb_name][k], v) for k, v in data.items()])
+        print(data)
 
-
-def getQuote(codeList):
-    result=[]
+def get_sQuote(codeList):
+    if isinstance(codeList,str):
+        codeList=[codeList]
+    if isinstance(codeList,list)==False:
+        raise ValueError('输入值必须为list或str')
+    result={}
     cl=['s_sh'+c if c[0]=='6' else ('s_'+c if c[0]=='s' else 's_sz'+c) for c in codeList]
     url="http://qt.gtimg.cn/q=%s"%(','.join(cl))
     qStr=requests.get(url).text
@@ -255,17 +261,14 @@ def getQuote(codeList):
            '涨停价':round((float(qInfoL[5])-float(qInfoL[6]))*1.1,2),
            '跌停价':round((float(qInfoL[5])-float(qInfoL[6]))*0.9,2)
            }
-        result.append(r)
+        result[qInfoL[4]]=r
     return  result
-
-
-
 
 
 def entrust(code,bs,price,amount):
     # code 的输入判定
-    quote=getQuote([code])
-    if code not in [q['证券代码'] for q in quote]:
+    quote=get_sQuote([code])
+    if code not in quote.keys():
         return {'success':False,'mag':'交易代码%s不存在'%(code)}
 
     # 交易方向的输入判定
@@ -277,8 +280,8 @@ def entrust(code,bs,price,amount):
     if len(priStr[priStr.find(".")+1:])>2:
         return {'success':False,'mag':'价格不能小于分'}
 
-    if float(price)>quote[0]['涨停价'] or float(price)<quote[0]['跌停价']:
-        return {'success':False,'mag':'价格输入在涨跌停价格[%.2f,%.2f]范围之外'%(quote[0]['跌停价'],quote[0]['涨停价'])}
+    if float(price)>quote[code]['涨停价'] or float(price)<quote[code]['跌停价']:
+        return {'success':False,'mag':'价格输入在涨跌停价格[%.2f,%.2f]范围之外'%(quote[code]['跌停价'],quote[code]['涨停价'])}
 
     # 交易数量的输入判定
     if amount==0 or amount%100!=0:

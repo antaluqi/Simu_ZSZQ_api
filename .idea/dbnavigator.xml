@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DBNavigator.Project.DataEditorManager">
     <record-view-column-sorting-type value="BY_INDEX" />
-    <value-preview-text-wrapping value="true" />
+    <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
   <component name="DBNavigator.Project.DataExportManager">
@@ -25,7 +25,7 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="f2e86653-0795-4350-a1bd-926d57d99e55">
-        <schema name="main" object-types="dataset trigger, table, column, constraint, index, view" />
+        <schema name="main" object-types="table, index, dataset trigger, view, constraint, column" />
       </connection>
     </loaded-nodes>
   </component>
@@ -35,17 +35,16 @@
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files>
-      <object connection-id="f2e86653-0795-4350-a1bd-926d57d99e55" object-ref="schemas/main/tables/balance" />
-      <object connection-id="f2e86653-0795-4350-a1bd-926d57d99e55" object-ref="schemas/main/tables/entrusts" />
-    </open-files>
+    <open-files />
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="f2e86653-0795-4350-a1bd-926d57d99e55" />
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
+    <filter-actions connection-id="f2e86653-0795-4350-a1bd-926d57d99e55" dataset="main.stock" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="f2e86653-0795-4350-a1bd-926d57d99e55" dataset="main.balance" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="f2e86653-0795-4350-a1bd-926d57d99e55" dataset="main.entrusts" active-filter-id="EMPTY_FILTER" />
+    <filter-actions connection-id="f2e86653-0795-4350-a1bd-926d57d99e55" dataset="main.trades" active-filter-id="EMPTY_FILTER" />
   </component>
   <component name="DBNavigator.Project.EditorStateManager">
     <last-used-providers />
@@ -85,7 +84,7 @@
           <port value="1234" />
           <database value="database" />
           <files>
-            <file path="C:\Users\antal\Desktop\Daniel\Python\Simu_ZSZQ_api\ZSZQ.db" schema="main" />
+            <file path="C:\Users\hccb\Desktop\Daniel\Python\Simu_ZSZQ_api\ZSZQ.db" schema="main" />
           </files>
           <type value="NONE" />
           <user value="" />
