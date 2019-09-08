@@ -4,6 +4,7 @@ import requests,re
 
 def ctrateTB():
     conn = sqlite3.connect('ZSZQ.db')
+
     create_balance_str='''CREATE TABLE IF NOT EXISTS balance
                                 (  f_curr_bal REAL,
                                    f_froz_bal REAL,
@@ -12,7 +13,6 @@ def ctrateTB():
                                    f_stock_val REAL,
                                    f_all_bal REAL,
                                    f_account TEXT);'''
-
     create_stock_str = '''CREATE TABLE IF NOT EXISTS stock
                                      (    code TEXT,
                                           name TEXT,
@@ -23,23 +23,6 @@ def ctrateTB():
                                           market TEXT,
                                           s_account TEXT,
                                           f_account TEXT);'''
-
-
-    create_stockv_str='''CREATE TABLE IF NOT EXISTS stock
-                                     (    code TEXT,
-                                          name TEXT,
-                                          s_bal REAL,
-                                          s_can_use_bal REAL,
-                                          s_fros_bal REAL,
-                                          s_cost_pri REAL,
-                                          s_market_pri REAL,
-                                          s_profit_rat REAL,
-                                          s_market_val REAl,
-                                          s_profit REAL,
-                                          market TEXT,
-                                          s_account TEXT,
-                                          f_account TEXT);'''
-
     create_entrusts_str='''CREATE TABLE IF NOT EXISTS entrusts
                                  (e_time TEXT,
                                   code TEXT,
@@ -58,7 +41,6 @@ def ctrateTB():
                                   scrap_order_reason TEXT,
                                   note_info TEXT,
                                   f_account TEXT);'''
-
     create_trades_str='''CREATE TABLE IF NOT EXISTS trades
                                  ( t_date DATE,
                                    t_time TEXT,
@@ -75,10 +57,23 @@ def ctrateTB():
                                    market TEXT,
                                    f_account TEXT);'''
 
+    create_balance_index='''CREATE UNIQUE INDEX IF NOT EXISTS b_index on balance(f_account)'''
+    create_stock_index='''CREATE UNIQUE INDEX IF NOT EXISTS s_index on stock(code,f_account)'''
+    create_entrusts_index='''CREATE UNIQUE INDEX IF NOT EXISTS e_index on entrusts(contract_no,f_account)'''
+    create_trades_index='''CREATE UNIQUE INDEX IF NOT EXISTS t_index on trades(contract_no,f_account)'''
+
     conn.execute(create_balance_str)
     conn.execute(create_stock_str)
     conn.execute(create_entrusts_str)
     conn.execute(create_trades_str)
+
+    conn.execute(create_balance_index)
+    conn.execute(create_stock_index)
+    conn.execute(create_entrusts_index)
+    conn.execute(create_trades_index)
+
+
+
     conn.commit()
     conn.close()
 
@@ -199,19 +194,19 @@ def insertTestData():
     conn.commit()
     conn.close()
 
-def get_table_data(t_name):
+def get_table_data(stNAME):
     with sqlite3.connect('ZSZQ.db') as conn:
-        tableName=sTBNAME_TBNANE[t_name]
-        key=sTBNAME_CNAME[t_name]
+        tableName=stNAME_2_tNANE[stNAME]
+        key=stNAME_2_dKEY[stNAME]
         value=conn.execute("select * from %s"%(tableName)).fetchall()
         result=[]
         for v in value:
             result.append(dict(zip(key,v)))
-        if t_name=='b':
+        if stNAME=='b':
             s=get_table_data('s')
             result[0]['股票市值']=0 if s==[] else sum([v['市值'] for v in s])
             return result[0]
-        elif t_name=='s':
+        elif stNAME=='s':
            for s in result:
               quote = get_sQuote(s['证券代码'])[s['证券代码']]
               s['市价']=quote['最新价格']
@@ -220,21 +215,21 @@ def get_table_data(t_name):
               s['盈亏']=round(quote['最新价格']-s['成本价'],2)
         return result
 
-def add_table_data(stb_name,data):
+def add_table_data(stNAME,data):
     if isinstance(data,dict)==False:
         return {'success':False,'mag':'参数2必须为dict'}
 
     with sqlite3.connect('ZSZQ.db') as conn:
-        if stb_name not in sTBNAME_TBNANE.keys():
-            return {'success': False, 'mag': '表%s不存在' % (stb_name)}
-        tb_name=sTBNAME_TBNANE[stb_name]
-        if conn.execute("select name from sqlite_master where type='table' and name = '%s'"%(tb_name) ).fetchall()==[]:
-            return {'success':False,'mag':'表%s不存在'%(tb_name)}
-        cName=sTBNAME_CNAME[stb_name]
-        if (set(data.keys())<=set(cName))==False:
+        if stNAME not in stNAME_2_tNANE.keys():
+            return {'success': False, 'mag': '表%s不存在' % (stNAME)}
+        tableName=stNAME_2_tNANE[stNAME]
+        if conn.execute("select name from sqlite_master where type='table' and name = '%s'"%(tableName) ).fetchall()==[]:
+            return {'success':False,'mag':'表%s不存在'%(tableName)}
+        dKEY=stNAME_2_dKEY[stNAME]
+        if (set(data.keys())<=set(dKEY))==False:
             return {'success':False,'mag':'请检查数据字段是否匹配表字段'}
-        data=dict([(sTBNAME_NKDICT[stb_name][k], v) for k, v in data.items()])
-        print(data)
+        data=dict([(stNAME_2_K2N[stNAME][k], v) for k, v in data.items()])
+        return data
 
 def get_sQuote(codeList):
     if isinstance(codeList,str):
@@ -264,7 +259,6 @@ def get_sQuote(codeList):
         result[qInfoL[4]]=r
     return  result
 
-
 def entrust(code,bs,price,amount):
     # code 的输入判定
     quote=get_sQuote([code])
@@ -293,6 +287,11 @@ def entrust(code,bs,price,amount):
         return {'success':False,'mag':'可用资金不足'}
 
 
-
+def dict2sqlStr(stNAME,data):
+   tableName=stNAME_2_tNANE[stNAME]
+   keyStr= ','.join(data.keys())
+   valueStr= '"'+'","'.join([str(v) for v in data.values()])+'"'
+   sqlStr='REPLACE INTO %s (%s) values (%s)'%(tableName,keyStr,valueStr)
+   print(sqlStr)
 
 

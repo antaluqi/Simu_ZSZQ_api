@@ -25,7 +25,7 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="f2e86653-0795-4350-a1bd-926d57d99e55">
-        <schema name="main" object-types="table, index, dataset trigger, view, constraint, column" />
+        <schema name="main" object-types="constraint, table, column, index, view, dataset trigger" />
       </connection>
     </loaded-nodes>
   </component>
@@ -35,7 +35,9 @@
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files />
+    <open-files>
+      <object connection-id="f2e86653-0795-4350-a1bd-926d57d99e55" object-ref="schemas/main/tables/stock" />
+    </open-files>
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="f2e86653-0795-4350-a1bd-926d57d99e55" />
@@ -84,7 +86,7 @@
           <port value="1234" />
           <database value="database" />
           <files>
-            <file path="C:\Users\hccb\Desktop\Daniel\Python\Simu_ZSZQ_api\ZSZQ.db" schema="main" />
+            <file path="C:\Users\antal\Desktop\Daniel\Python\Simu_ZSZQ_api\ZSZQ.db" schema="main" />
           </files>
           <type value="NONE" />
           <user value="" />
